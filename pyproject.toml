@@ -1,0 +1,21 @@
+[project]
+name = "agricultural_wage_study"
+version = "0.1.0"
+description = "Analyzing the relationship between agricultural wages, crop yields, and climate across U.S. counties"
+authors = ["Nick Orsini <your.email@example.com>"]
+readme = "README.md"
+requires-python = ">=3.9"
+
+[project.dependencies]
+pandas = "^2.2"
+numpy = "^1.26"
+matplotlib = "^3.8"
+geopandas = "^0.14"
+requests = "^2.31"
+scikit-learn = "^1.5"
+statsmodels = "^0.14"
+shapely = "^2.0"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
