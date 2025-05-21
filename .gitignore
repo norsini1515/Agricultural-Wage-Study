@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment / IDE
+.venv/
+.env/
+*.env
+.vscode/
+.DS_Store
+
+# Output
+outputs/
+logs/

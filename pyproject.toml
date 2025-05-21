@@ -2,19 +2,27 @@
 name = "agricultural_wage_study"
 version = "0.1.0"
 description = "Analyzing the relationship between agricultural wages, crop yields, and climate across U.S. counties"
-authors = ["Nick Orsini <your.email@example.com>"]
+authors = [
+  { name = "Nicholas Orsini", email = "norsini1@jh.edu" }
+]
 readme = "README.md"
 requires-python = ">=3.9"
 
-[project.dependencies]
-pandas = "^2.2"
-numpy = "^1.26"
-matplotlib = "^3.8"
-geopandas = "^0.14"
-requests = "^2.31"
-scikit-learn = "^1.5"
-statsmodels = "^0.14"
-shapely = "^2.0"
+dependencies = [
+  "pandas>=2.2",
+  "numpy>=1.26",
+  "matplotlib>=3.8",
+  "geopandas>=0.14",
+  "requests>=2.31",
+  "scikit-learn>=1.5",
+  "statsmodels>=0.14",
+  "shapely>=2.0",
+  "python-dotenv>=1.0"
+]
+
+[tool.setuptools]
+packages = ["agwage"]
+package-dir = {"" = "src"}
 
 [build-system]
 requires = ["setuptools>=61.0"]
