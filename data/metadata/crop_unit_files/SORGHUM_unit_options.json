@@ -1,0 +1,34 @@
+{
+  "AREA PLANTED": [
+    "ACRES"
+  ],
+  "AREA HARVESTED": [
+    "ACRES",
+    "OPERATIONS",
+    "PCT BY METHOD",
+    "PCT OF OPERATIONS BY METHOD"
+  ],
+  "YIELD": [
+    "BU / ACRE",
+    "BU / NET PLANTED ACRE",
+    "TONS / ACRE"
+  ],
+  "PRODUCTION": [
+    "$",
+    "BU",
+    "GALLONS",
+    "TONS"
+  ],
+  "PRICE RECEIVED": [
+    "$ / BU",
+    "$ / CWT",
+    "PCT OF PARITY"
+  ],
+  "CONDITION": [
+    "PCT EXCELLENT",
+    "PCT FAIR",
+    "PCT GOOD",
+    "PCT POOR",
+    "PCT VERY POOR"
+  ]
+}

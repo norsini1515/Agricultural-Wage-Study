@@ -1,0 +1,39 @@
+{
+  "AREA PLANTED": [
+    "ACRES",
+    "PCT BY TYPE"
+  ],
+  "AREA HARVESTED": [
+    "ACRES",
+    "CUERDAS",
+    "OPERATIONS",
+    "PCT BY METHOD",
+    "PCT OF OPERATIONS BY METHOD"
+  ],
+  "YIELD": [
+    "BALES / ACRE",
+    "LB / ACRE",
+    "LB / NET PLANTED ACRE"
+  ],
+  "PRODUCTION": [
+    "$",
+    "480 LB BALES",
+    "BALES",
+    "CWT",
+    "RUNNING BALES",
+    "TONS"
+  ],
+  "PRICE RECEIVED": [
+    "$ / CWT",
+    "$ / LB",
+    "$ / TON",
+    "PCT OF PARITY"
+  ],
+  "CONDITION": [
+    "PCT EXCELLENT",
+    "PCT FAIR",
+    "PCT GOOD",
+    "PCT POOR",
+    "PCT VERY POOR"
+  ]
+}

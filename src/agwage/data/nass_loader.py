@@ -7,7 +7,7 @@ from agwage.utils import api_tools
 from agwage.utils.nass_api_helpers import get_available_parameters, get_valid_units, save_unit_options_report
 from agwage import load_api_key
 from agwage.utils.api_tools import format_param_filename
-from agwage.data.query_presets import CROPS_BASE, CROP_CORE_STATS
+from agwage.data.query_presets import CROPS_BASE, CROP_CORE_STATS, CORE_CROPS
 
 NASS_API_KEY = load_api_key("NASS_API_KEY")
 
@@ -77,8 +77,8 @@ if __name__ == '__main__':
         "unit_desc": "ACRES",
         "year": "2022"
     }
-
-    run_crop_unit_report(commodity="CORN")
+    for crop in CORE_CROPS:
+        run_crop_unit_report(commodity=crop)
 
     if False:
         filename = format_param_filename("unit_desc", sector_desc="CROPS", group_desc="FIELD CROPS")

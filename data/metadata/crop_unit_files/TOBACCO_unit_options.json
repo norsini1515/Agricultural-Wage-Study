@@ -1,0 +1,24 @@
+{
+  "AREA PLANTED": [],
+  "AREA HARVESTED": [
+    "ACRES",
+    "OPERATIONS"
+  ],
+  "YIELD": [
+    "LB / ACRE"
+  ],
+  "PRODUCTION": [
+    "$",
+    "LB"
+  ],
+  "PRICE RECEIVED": [
+    "$ / LB"
+  ],
+  "CONDITION": [
+    "PCT EXCELLENT",
+    "PCT FAIR",
+    "PCT GOOD",
+    "PCT POOR",
+    "PCT VERY POOR"
+  ]
+}

@@ -90,7 +90,7 @@ def save_unit_options_report(
 
     if filename is None:
         safe_name = commodity.replace(" ", "_").upper()
-        filename = f"{safe_name}__unit_options.json"
+        filename = f"{safe_name}_unit_options.json"
 
     output_path = directories.METADATA_DIR / filename
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -102,6 +102,6 @@ def save_unit_options_report(
     with open(output_path, "w") as f:
         json.dump(report, f, indent=2)
 
-    print(f"[✓] Saved unit options report for '{commodity}' to {output_path}")
+    print(f"[SUCCESS] Saved unit options report for '{commodity}' to {output_path}")
 
 
