@@ -56,45 +56,61 @@ def get_nass_data(params: dict, cache_filename: str = None, overwrite: bool = Fa
 
     return df
 
-def run_core_variable_reports(core_variable_list, output_dir="unit_files", overwrite=True):
+def run_core_variable_reports(core_variable_dict, output_dir="unit_files", overwrite=True):
     """
-    Loop through a list of (sector, group, variable_list) tuples and run save_options_report.
+    Loop through a dictionary of core variables and run save_options_report for each group.
 
     Args:
-        core_variable_list (list): Tuples like (sector_desc, group_desc, [commodity_descs])
+        core_variable_dict (dict): Format {
+            "GROUP_NAME": {
+                "sector": "SECTOR_NAME",
+                "commodities": [list of commodity_descs]
+            }, ...
+        }
         output_dir (str): Subfolder in METADATA_DIR where files will be saved
         overwrite (bool): If True, overwrite existing files
     """
-    for sector, group, commodities in core_variable_list:
+    folder_path = directories.METADATA_DIR / output_dir
+    folder_path.mkdir(parents=True, exist_ok=True)
+
+    for group, config in core_variable_dict.items():
+        sector = config["sector"]
+        commodities = config["commodities"]
+
         print(f"\n[GROUP] {group} | [SECTOR] {sector} | {len(commodities)} commodities")
-        
+
         filename = f"{group.replace(' ', '_').upper()}__unit_matrix.json"
-        folder_path = directories.METADATA_DIR / output_dir
-        folder_path.mkdir(parents=True, exist_ok=True)
-        path = folder_path/ filename
 
         save_options_report(
             commodities=commodities,
-            output_filename=path.name,
+            output_path=folder_path,
+            output_filename=filename,
             overwrite=overwrite,
             filters={"sector_desc": sector, "group_desc": group}
         )
 
-def collate_unit_files(directory: Path) -> pd.DataFrame:
+def collate_unit_files(directory: Path, core_variable_dict: dict) -> pd.DataFrame:
     """
     Collate all unit matrix JSON files into a single long-form DataFrame.
-    Uses CORE_VARIABLES to attach group/sector metadata.
+    Uses CORE_VARIABLES dict to attach group/sector metadata.
 
     Args:
         directory (Path): Path to the 'unit_files' directory.
+        core_variable_dict (dict): Format {
+            "GROUP_NAME": {
+                "sector": "SECTOR_NAME",
+                "commodities": [list of commodity_descs]
+            }, ...
+        }
 
     Returns:
         pd.DataFrame with columns: COMMODITY, SECTOR, GROUP, STATISTIC, UNIT
     """
     # Flatten CORE_VARIABLES into commodity → (sector, group) lookup
     commodity_to_context = {}
-    for sector, group, commodities in CORE_VARIABLES:
-        for c in commodities:
+    for group, config in core_variable_dict.items():
+        sector = config["sector"]
+        for c in config["commodities"]:
             commodity_to_context[c.upper()] = (sector, group)
 
     records = []
@@ -119,6 +135,7 @@ def collate_unit_files(directory: Path) -> pd.DataFrame:
 
     return pd.DataFrame(records)
 
+
 if __name__ == '__main__':
     corn_query = {
         **FIELD_CROPS_BASE,
@@ -128,7 +145,7 @@ if __name__ == '__main__':
         "year": "2022"
     }
     
-    metadata_df = collate_unit_files(directories.METADATA_DIR/'unit_files')
+    metadata_df = collate_unit_files(directories.METADATA_DIR/'unit_files', CORE_VARIABLES)
     metadata_df.to_csv(directories.METADATA_DIR/'unit_files/collated_unit_metadata.csv', index=False)
 
     print(metadata_df.shape)

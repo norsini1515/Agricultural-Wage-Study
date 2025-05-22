@@ -108,12 +108,39 @@ PRICES_PAID_CORE = [
 ]
 
 
-CORE_VARIABLES = [
-    #sector, group, commodity
-    ("CROPS", "FIELD CROPS", FIELD_CROPS_CORE),
-    ("ANIMALS & PRODUCTS", "LIVESTOCK", LIVESTOCK_CORE),
-    ("ANIMALS & PRODUCTS", "POULTRY", POULTRY_CORE),
-    ("ECONOMICS", "INCOME", INCOME_CORE),
-    ("ECONOMICS", "EXPENSES", EXPENSES_CORE),
-    ("ECONOMICS", "PRICES PAID", PRICES_PAID_CORE),
-]
+# CORE_VARIABLES = [
+#     #sector, group, commodity
+#     ("CROPS", "FIELD CROPS", FIELD_CROPS_CORE),
+#     ("ANIMALS & PRODUCTS", "LIVESTOCK", LIVESTOCK_CORE),
+#     ("ANIMALS & PRODUCTS", "POULTRY", POULTRY_CORE),
+#     ("ECONOMICS", "INCOME", INCOME_CORE),
+#     ("ECONOMICS", "EXPENSES", EXPENSES_CORE),
+#     ("ECONOMICS", "PRICES PAID", PRICES_PAID_CORE),
+# ]
+
+CORE_VARIABLES = {
+    "FIELD CROPS": {
+        "sector": "CROPS",
+        "commodities": FIELD_CROPS_CORE
+    },
+    "LIVESTOCK": {
+        "sector": "ANIMALS & PRODUCTS",
+        "commodities": LIVESTOCK_CORE
+    },
+    "POULTRY": {
+        "sector": "ANIMALS & PRODUCTS",
+        "commodities": POULTRY_CORE
+    },
+    "INCOME": {
+        "sector": "ECONOMICS",
+        "commodities": INCOME_CORE
+    },
+    "EXPENSES": {
+        "sector": "ECONOMICS",
+        "commodities": EXPENSES_CORE
+    },
+    "PRICES PAID": {
+        "sector": "ECONOMICS",
+        "commodities": PRICES_PAID_CORE
+    }
+}
