@@ -1,13 +1,15 @@
 import os
 import requests
 import pandas as pd
+import json
+from pathlib import Path
 
 from agwage import directories
 from agwage.utils import api_tools
-from agwage.utils.nass_api_helpers import get_available_parameters, get_valid_units, save_unit_options_report
+from agwage.utils.nass_api_helpers import get_available_parameters, save_options_report, explore_available_commidities
 from agwage import load_api_key
 from agwage.utils.api_tools import format_param_filename
-from agwage.data.query_presets import CROPS_BASE, CROP_CORE_STATS, CORE_CROPS
+from agwage.data.query_presets import FIELD_CROPS_BASE, CORE_VARIABLES
 
 NASS_API_KEY = load_api_key("NASS_API_KEY")
 
@@ -54,43 +56,96 @@ def get_nass_data(params: dict, cache_filename: str = None, overwrite: bool = Fa
 
     return df
 
-def run_crop_unit_report(commodity: str):
+def run_core_variable_reports(core_variable_list, output_dir="unit_files", overwrite=True):
     """
-    Generate and save unit_desc metadata for a given crop across core statistics.
+    Loop through a list of (sector, group, variable_list) tuples and run save_options_report.
 
     Args:
-        commodity (str): e.g., "CORN", "SOYBEANS"
+        core_variable_list (list): Tuples like (sector_desc, group_desc, [commodity_descs])
+        output_dir (str): Subfolder in METADATA_DIR where files will be saved
+        overwrite (bool): If True, overwrite existing files
     """
-    print(f"Running unit report for: {commodity}")
-    save_unit_options_report(
-        commodity=commodity,
-        stats=CROP_CORE_STATS,
-        sector_desc="CROPS",
-        group_desc="FIELD CROPS"
-    )
+    for sector, group, commodities in core_variable_list:
+        print(f"\n[GROUP] {group} | [SECTOR] {sector} | {len(commodities)} commodities")
+        
+        filename = f"{group.replace(' ', '_').upper()}__unit_matrix.json"
+        folder_path = directories.METADATA_DIR / output_dir
+        folder_path.mkdir(parents=True, exist_ok=True)
+        path = folder_path/ filename
+
+        save_options_report(
+            commodities=commodities,
+            output_filename=path.name,
+            overwrite=overwrite,
+            filters={"sector_desc": sector, "group_desc": group}
+        )
+
+def collate_unit_files(directory: Path) -> pd.DataFrame:
+    """
+    Collate all unit matrix JSON files into a single long-form DataFrame.
+    Uses CORE_VARIABLES to attach group/sector metadata.
+
+    Args:
+        directory (Path): Path to the 'unit_files' directory.
+
+    Returns:
+        pd.DataFrame with columns: COMMODITY, SECTOR, GROUP, STATISTIC, UNIT
+    """
+    # Flatten CORE_VARIABLES into commodity → (sector, group) lookup
+    commodity_to_context = {}
+    for sector, group, commodities in CORE_VARIABLES:
+        for c in commodities:
+            commodity_to_context[c.upper()] = (sector, group)
+
+    records = []
+
+    for file_path in directory.glob("*.json"):
+        with open(file_path, "r") as f:
+            data = json.load(f)
+
+        for commodity, stat_map in data.items():
+            commodity_upper = commodity.upper()
+            sector, group = commodity_to_context.get(commodity_upper, ("UNKNOWN", "UNKNOWN"))
+
+            for stat, units in stat_map.items():
+                for unit in units:
+                    records.append({
+                        "SECTOR": sector,
+                        "GROUP": group,
+                        "COMMODITY": commodity_upper,
+                        "STATISTIC": stat,
+                        "UNIT": unit
+                    })
+
+    return pd.DataFrame(records)
 
 if __name__ == '__main__':
     corn_query = {
-        **CROPS_BASE,
+        **FIELD_CROPS_BASE,
         "commodity_desc": "CORN",
         "statisticcat_desc": "AREA HARVESTED",
         "unit_desc": "ACRES",
         "year": "2022"
     }
-    for crop in CORE_CROPS:
-        run_crop_unit_report(commodity=crop)
+    
+    metadata_df = collate_unit_files(directories.METADATA_DIR/'unit_files')
+    metadata_df.to_csv(directories.METADATA_DIR/'unit_files/collated_unit_metadata.csv', index=False)
+
+    print(metadata_df.shape)
 
     if False:
-        filename = format_param_filename("unit_desc", sector_desc="CROPS", group_desc="FIELD CROPS")
-        params = get_available_parameters("unit_desc", sector_desc="CROPS", group_desc="FIELD CROPS", statisticcat_desc="MOISTURE")
-        print(params)
-        api_tools.save_parameter_values(filename, params, format='json')
+        #GATHER metadata info for our commodities of interest
+        run_core_variable_reports(CORE_VARIABLES, overwrite=True)
 
-
-        filename = format_param_filename("statisticcat_desc", sector_desc="CROPS", group_desc="FIELD CROPS")
-        params = get_available_parameters("statisticcat_desc", sector_desc="CROPS", group_desc="FIELD CROPS")
-        api_tools.save_parameter_values(filename, params, format='json')
-
+        #EXPLORE AVAILABLE COMMODITY VALUES
+        explore_available_commidities(sector="CROPS", group="FIELD CROPS")
+        explore_available_commidities(sector="ANIMALS & PRODUCTS", group="LIVESTOCK")
+        explore_available_commidities(sector="ANIMALS & PRODUCTS", group="POULTRY")
+        explore_available_commidities(sector="ECONOMICS", group="INCOME")
+        explore_available_commidities(sector="ECONOMICS", group="EXPENSES")
+        explore_available_commidities(sector="ECONOMICS", group="PRICES PAID")
+    
+        #SAVE Base values per parameter available
         for key in ["source_desc", "sector_desc", "group_desc", "commodity_desc", "statisticcat_desc", "unit_desc", "year", "agg_level_desc"]:
             print(f'processeing key: {key}')
             param_list = get_available_parameters(param=key)

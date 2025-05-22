@@ -17,3 +17,6 @@ __pycache__/
 # Output
 outputs/
 logs/
+
+
+*.json
