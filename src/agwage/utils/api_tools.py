@@ -59,9 +59,9 @@ def build_query(base: dict, **overrides) -> dict:
     """
     return {**base, **overrides}
 
-def format_param_filename(param: str, **filters) -> str:
+def format_param_filename(param: str=None, **filters) -> str:
     """
     Create a safe, informative filename for a saved parameter list.
     """
-    parts = [param] + [f"{k}-{v.replace(' ', '_')}" for k, v in filters.items()]
+    parts = [param] + [f"{k}-{str(v).replace(' ', '_').replace('/', '-')}" for k, v in filters.items()]
     return "_".join(parts)

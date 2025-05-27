@@ -1,7 +1,8 @@
 import os
+import json
+import time
 import requests
 import pandas as pd
-import json
 from pathlib import Path
 
 from agwage import directories
@@ -10,7 +11,6 @@ from agwage.utils.nass_api_helpers import get_available_parameters, save_options
 from agwage import load_api_key
 from agwage.utils.api_tools import format_param_filename
 from agwage.data.query_presets import FIELD_CROPS_BASE, CORE_VARIABLES
-
 NASS_API_KEY = load_api_key("NASS_API_KEY")
 
 # Base URL for NASS QuickStats
@@ -135,22 +135,108 @@ def collate_unit_files(directory: Path, core_variable_dict: dict) -> pd.DataFram
 
     return pd.DataFrame(records)
 
+def download_timeseries_group(
+    base_query: dict,
+    group: str,
+    statistic: str,
+    unit: str = None,
+    year_range: tuple = (2010, 2024),
+    state: str = "US",  # or None for national
+    freq: str = "ANNUAL",  # or "MONTHLY"
+    include_units: bool = False,
+    verbose: bool = True
+) -> pd.DataFrame:
+    """
+    Download time series data from NASS QuickStats for all commodities in a given group and statistic.
+
+    Parameters:
+        group (str): The commodity group (e.g., "FIELD CROPS").
+        statistic (str): The statistical category (e.g., "PRICE RECEIVED").
+        year_range (tuple): Start and end year (inclusive).
+        state (str): US state abbreviation or "US" for national.
+        freq (str): Frequency ("ANNUAL" or "MONTHLY").
+        include_units (bool): If True, include unit_desc in final output.
+        verbose (bool): If True, print progress.
+
+    Returns:
+        pd.DataFrame: Combined time series data.
+    """
+    # Load and filter metadata
+    unit_metadata_path = directories.METADATA_DIR / "unit_files" / "collated_unit_metadata.csv"
+    metadata = pd.read_csv(unit_metadata_path)
+    
+    filtered_df = metadata[(metadata["GROUP"] == group) & (metadata["STATISTIC"] == statistic)]
+
+    if unit:
+        filtered_df = filtered_df[filtered_df["UNIT"] == unit]
+
+    all_results = []
+
+    for _, row in filtered_df.iterrows():
+        commodity = row["COMMODITY"]
+        units = [unit] if unit else [row["UNIT"]]
+
+        for u in units:
+            for year in range(year_range[0], year_range[1] + 1):
+                query = {
+                    **base_query,
+                    "commodity_desc": commodity,
+                    "statisticcat_desc": statistic,
+                    "unit_desc": u,
+                    "year": year
+                }
+                print(query)
+                try:
+                    cache_filename = format_param_filename("nas_group", **query)
+                    print(f"{cache_filename=}")
+                    df = get_nass_data(query, cache_filename=cache_filename, overwrite=False)
+
+                    if not df.empty:
+                        if verbose:
+                            print(f"[SUCCESS] {commodity} {statistic} {u} {year}")
+                        df["UNIT_USED"] = u
+                        all_results.append(df)
+
+                except Exception as e:
+                    if verbose:
+                        print(f"[FAILURE] {commodity} {statistic} {u} {year} failed: {e}")
+                    continue
+
+                time.sleep(1)
+
+    if not all_results:
+        return pd.DataFrame()
+
+    return pd.concat(all_results, ignore_index=True)
+
+
+
+
+
 
 if __name__ == '__main__':
-    corn_query = {
-        **FIELD_CROPS_BASE,
-        "commodity_desc": "CORN",
-        "statisticcat_desc": "AREA HARVESTED",
-        "unit_desc": "ACRES",
-        "year": "2022"
-    }
+    crop = 'CORN'
+    stat = "" #to replace
+    unit = "" #to replace
+    year = 2015
+    df = download_timeseries_group(
+        group="FIELD CROPS",
+        statistic="AREA PLANTED",
+        base_query=FIELD_CROPS_BASE,
+        unit="ACRES",  # or None
+        year_range=(2015, 2020)
+        )
     
-    metadata_df = collate_unit_files(directories.METADATA_DIR/'unit_files', CORE_VARIABLES)
-    metadata_df.to_csv(directories.METADATA_DIR/'unit_files/collated_unit_metadata.csv', index=False)
-
-    print(metadata_df.shape)
+    
 
     if False:
+        #GROUP metadata interests
+        metadata_df = collate_unit_files(directories.METADATA_DIR/'unit_files', CORE_VARIABLES)
+        metadata_df.to_csv(directories.METADATA_DIR/'unit_files/collated_unit_metadata.csv', index=False)
+
+        print(metadata_df.shape)
+
+
         #GATHER metadata info for our commodities of interest
         run_core_variable_reports(CORE_VARIABLES, overwrite=True)
 
