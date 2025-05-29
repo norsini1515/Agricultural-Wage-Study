@@ -1,60 +1,21 @@
+#src/agwage/data/nass_loader.py
 import os
 import json
 import time
 import requests
 import pandas as pd
+from typing import Dict
 from pathlib import Path
-
 from agwage import directories
 from agwage.utils import api_tools
 from agwage.utils.nass_api_helpers import get_available_parameters, save_options_report, explore_available_commidities
 from agwage import load_api_key
-from agwage.utils.api_tools import format_param_filename
 from agwage.data.query_presets import FIELD_CROPS_BASE, CORE_VARIABLES
+
 NASS_API_KEY = load_api_key("NASS_API_KEY")
 
 # Base URL for NASS QuickStats
 NASS_API_URL = "https://quickstats.nass.usda.gov/api/api_GET/"
-
-def get_nass_data(params: dict, cache_filename: str = None, overwrite: bool = False) -> pd.DataFrame:
-    """
-    Request data from the USDA NASS QuickStats API and return as a DataFrame.
-    Optionally cache the result to a CSV file in the raw data directory.
-    
-    Parameters:
-        params (dict): API query parameters.
-        cache_filename (str): Optional filename to cache the response.
-        overwrite (bool): If True, overwrite existing cache file.
-    
-    Returns:
-        pd.DataFrame: The requested data.
-    """
-    # Add API key to request parameters
-    params["key"] = NASS_API_KEY
-    params["format"] = "CSV"
-
-    # Determine cache path
-    if cache_filename:
-        cache_path = directories.RAW_DIR / cache_filename
-        if cache_path.exists() and not overwrite:
-            print(f"Loading cached file: {cache_path}")
-            return pd.read_csv(cache_path)
-
-    # Make the API request
-    print(f"Requesting data from NASS QuickStats API with params: {params}")
-    response = requests.get(NASS_API_URL, params=params)
-    response.raise_for_status()
-
-    # Read into DataFrame
-    from io import StringIO
-    df = pd.read_csv(StringIO(response.text))
-
-    # Save to cache if requested
-    if cache_filename:
-        df.to_csv(cache_path, index=False)
-        print(f"Saved to cache: {cache_path}")
-
-    return df
 
 def run_core_variable_reports(core_variable_dict, output_dir="unit_files", overwrite=True):
     """
@@ -135,17 +96,104 @@ def collate_unit_files(directory: Path, core_variable_dict: dict) -> pd.DataFram
 
     return pd.DataFrame(records)
 
+def inject_download_metadata(df: pd.DataFrame, params: Dict, additional_fields: Dict = None) -> pd.DataFrame:
+    """
+    Inject standard metadata columns into the DataFrame using API query parameters
+    and optionally additional custom metadata.
+
+    Parameters:
+        df (pd.DataFrame): The original NASS response data.
+        params (dict): The original API request parameters.
+        additional_fields (dict, optional): Extra metadata fields to inject.
+
+    Returns:
+        pd.DataFrame: Modified DataFrame with metadata and uppercased columns.
+    """
+    df = df.copy()
+
+    # From API params
+    metadata_fields = {
+        "COMMODITY": params.get("commodity_desc"),
+        "STATISTIC": params.get("statisticcat_desc"),
+        "UNIT": params.get("unit_desc"),
+        "YEAR": params.get("year"),
+        "GROUP": params.get("group_desc"),
+        "SECTOR": params.get("sector_desc"),
+        "DOWNLOAD_DATE": pd.Timestamp.now().isoformat()
+    }
+
+    # Merge with any additional user-defined fields
+    if additional_fields:
+        metadata_fields.update({k.upper(): v for k, v in additional_fields.items()})
+
+    # Inject into DataFrame
+    for col, val in metadata_fields.items():
+        df[col] = val
+
+    # Uppercase all column names
+    df.columns = df.columns.str.upper()
+
+    return df
+
+def download_nass_data(
+    params: dict,
+    filename: str = None,
+    filepath: Path = directories.RAW_DIR,
+    overwrite: bool = False,
+    verbose: bool = False
+    ) -> None:
+    """
+    Fetch data from the USDA NASS QuickStats API as a DataFrame.
+    Optionally read from or write to a local CSV file to avoid repeat downloads.
+
+    Parameters:
+        params (dict): Query parameters for the API (excluding key/format).
+        filename (str): Optional file name to read from/write to.
+        filepath (Path): Directory to read/write file from.
+        overwrite (bool): If True, overwrite existing file.
+
+    Returns:
+        pd.DataFrame: The requested or cached data.
+    """
+    # Add API key to request parameters
+    params["key"] = NASS_API_KEY
+    params["format"] = "CSV"
+
+    # Determine cache path
+    if filename:
+        cache_path = filepath / filename
+        if cache_path.exists() and not overwrite:
+            print(f"Loading cached file: {cache_path}")
+            return pd.read_csv(cache_path)
+
+    # Make the API request
+    if verbose:
+        print(f"Requesting data from NASS QuickStats API with params: {params}")
+    response = requests.get(NASS_API_URL, params=params)
+    response.raise_for_status()
+
+    # Read into DataFrame
+    from io import StringIO
+    df = pd.read_csv(StringIO(response.text))
+
+    # Save to cache if requested
+    if filename:
+        # Inject useful metadata (in case it's missing or for standardization)
+        df = inject_download_metadata(df, params)
+        # Write to disk
+        df.to_csv(cache_path, index=False)
+        print(f"Saved to cache: {cache_path}")
+
+    return df
+
 def download_timeseries_group(
     base_query: dict,
     group: str,
     statistic: str,
     unit: str = None,
-    year_range: tuple = (2010, 2024),
-    state: str = "US",  # or None for national
-    freq: str = "ANNUAL",  # or "MONTHLY"
-    include_units: bool = False,
-    verbose: bool = True
-) -> pd.DataFrame:
+    year_range: tuple = (1996, 2024),
+    verbose: bool = False
+) -> None:
     """
     Download time series data from NASS QuickStats for all commodities in a given group and statistic.
 
@@ -163,14 +211,15 @@ def download_timeseries_group(
     """
     # Load and filter metadata
     unit_metadata_path = directories.METADATA_DIR / "unit_files" / "collated_unit_metadata.csv"
+    if not unit_metadata_path.exists():
+        raise FileNotFoundError(f"Metadata file not found at: {unit_metadata_path}")
+
     metadata = pd.read_csv(unit_metadata_path)
     
     filtered_df = metadata[(metadata["GROUP"] == group) & (metadata["STATISTIC"] == statistic)]
 
     if unit:
         filtered_df = filtered_df[filtered_df["UNIT"] == unit]
-
-    all_results = []
 
     for _, row in filtered_df.iterrows():
         commodity = row["COMMODITY"]
@@ -185,50 +234,70 @@ def download_timeseries_group(
                     "unit_desc": u,
                     "year": year
                 }
-                print(query)
+                if verbose:
+                    print(query)
                 try:
-                    cache_filename = format_param_filename("nas_group", **query)
-                    print(f"{cache_filename=}")
-                    df = get_nass_data(query, cache_filename=cache_filename, overwrite=False)
-
-                    if not df.empty:
-                        if verbose:
-                            print(f"[SUCCESS] {commodity} {statistic} {u} {year}")
-                        df["UNIT_USED"] = u
-                        all_results.append(df)
+                    filename = api_tools.sanitize_filename(commodity, statistic, u, year) + ".csv"
+                    filepath = directories.RAW_DIR / query['group_desc']
+                    filepath.mkdir(exist_ok=True, parents=True)
+                    if verbose:
+                        print(f"{filename=}")
+                    download_nass_data(query, filename=filename, filepath=filepath,
+                                       overwrite=False)
 
                 except Exception as e:
                     if verbose:
                         print(f"[FAILURE] {commodity} {statistic} {u} {year} failed: {e}")
                     continue
 
-                time.sleep(1)
+                api_tools.rate_limit_pause(1)
 
-    if not all_results:
-        return pd.DataFrame()
+def run_group_metric_downloads(
+    base_query: dict,
+    metrics_dict: dict,
+    skip_classifications: list[str] = None,
+    group_name: str = "FIELD CROPS",
+    year_range: tuple = (1980, 2024),
+    verbose: bool = True
+) -> None:
+    """
+    Run batch downloads for a group using a metric dictionary.
 
-    return pd.concat(all_results, ignore_index=True)
+    Args:
+        base_query (dict): Base query dictionary (e.g., FIELD_CROPS_BASE).
+        metrics_dict (dict): Dictionary of {classification: [(stat, unit), ...]}.
+        skip_classifications (list): Optional list of classifications to skip.
+        group_name (str): NASS group name (e.g., "FIELD CROPS").
+        year_range (tuple): Year span to download.
+        verbose (bool): Print progress messages.
+    """
+    skip_classifications = skip_classifications or []
 
+    for classification, groupings in metrics_dict.items():
+        if classification in skip_classifications:
+            if verbose:
+                print(f"SKIPPING {classification} (already downloaded)\n")
+            continue
 
-
-
+        for statistic, unit in groupings:
+            if verbose:
+                print(f"BEGINNING {classification.upper()} | {statistic} ({unit})")
+            try:
+                download_timeseries_group(
+                    group=group_name,
+                    statistic=statistic,
+                    unit=unit,
+                    base_query=base_query,
+                    year_range=year_range,
+                    verbose=verbose
+                )
+                if verbose:
+                    print(f"[SUCCESS] Finished: {statistic} ({unit})\n")
+            except Exception as e:
+                print(f"[FAILURE] {statistic} ({unit}) - {e}\n")
 
 
 if __name__ == '__main__':
-    crop = 'CORN'
-    stat = "" #to replace
-    unit = "" #to replace
-    year = 2015
-    df = download_timeseries_group(
-        group="FIELD CROPS",
-        statistic="AREA PLANTED",
-        base_query=FIELD_CROPS_BASE,
-        unit="ACRES",  # or None
-        year_range=(2015, 2020)
-        )
-    
-    
-
     if False:
         #GROUP metadata interests
         metadata_df = collate_unit_files(directories.METADATA_DIR/'unit_files', CORE_VARIABLES)
@@ -250,6 +319,6 @@ if __name__ == '__main__':
     
         #SAVE Base values per parameter available
         for key in ["source_desc", "sector_desc", "group_desc", "commodity_desc", "statisticcat_desc", "unit_desc", "year", "agg_level_desc"]:
-            print(f'processeing key: {key}')
+            print(f'Processing  key: {key}')
             param_list = get_available_parameters(param=key)
             api_tools.save_parameter_values(key, param_list, format="json")

@@ -16,6 +16,44 @@ FIELD_CROPS_CORE_STATS = [
     "CONDITION"
 ]
 
+FIELD_CROPS_METRICS = {
+        "land_use": [
+            ("AREA PLANTED", "ACRES"),
+            ("AREA HARVESTED", "ACRES"),
+        ],
+        "output": [
+            ("YIELD", "BU / ACRE"),
+            ("PRODUCTION", "BU"),
+            ("SALES", "$"),
+        ],
+        "price": [
+            ("PRICE RECEIVED", "$ / BU"),
+        ],
+        "condition": [
+            ("CONDITION", "PCT EXCELLENT"),
+            ("CONDITION", "PCT GOOD"),
+            ("CONDITION", "PCT FAIR"),
+            ("CONDITION", "PCT POOR"),
+            ("CONDITION", "PCT VERY POOR"),
+        ],
+        "climate_sensitivity": [
+            ("MOISTURE", "PCT"),
+            ("WATER APPLIED", "ACRE FEET / ACRE"),
+        ],
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 LIVESTOCK_BASE = {
     "source_desc": "SURVEY",
     "sector_desc": "ANIMALS & PRODUCTS",

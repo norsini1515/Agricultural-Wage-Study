@@ -2,7 +2,7 @@ import json
 import pandas as pd
 from pathlib import Path
 from typing import List, Union
-
+import time
 from agwage import directories
 
 def save_parameter_values(
@@ -65,3 +65,9 @@ def format_param_filename(param: str=None, **filters) -> str:
     """
     parts = [param] + [f"{k}-{str(v).replace(' ', '_').replace('/', '-')}" for k, v in filters.items()]
     return "_".join(parts)
+
+def sanitize_filename(*args):
+    return "_".join(str(arg).replace("/", "_per_").replace(" ", "_") for arg in args)
+
+def rate_limit_pause(seconds=1):
+    time.sleep(seconds)
