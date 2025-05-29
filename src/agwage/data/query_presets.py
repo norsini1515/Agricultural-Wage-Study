@@ -25,6 +25,7 @@ FIELD_CROPS_METRICS = {
             ("YIELD", "BU / ACRE"),
             ("PRODUCTION", "BU"),
             ("SALES", "$"),
+            ("SALES", "BU")
         ],
         "price": [
             ("PRICE RECEIVED", "$ / BU"),
@@ -42,17 +43,7 @@ FIELD_CROPS_METRICS = {
         ],
     }
 
-
-
-
-
-
-
-
-
-
-
-
+####################################
 
 LIVESTOCK_BASE = {
     "source_desc": "SURVEY",
