@@ -145,17 +145,6 @@ PRICES_PAID_CORE = [
     "MACHINERY TOTALS"              # Broad capital costs
 ]
 
-
-# CORE_VARIABLES = [
-#     #sector, group, commodity
-#     ("CROPS", "FIELD CROPS", FIELD_CROPS_CORE),
-#     ("ANIMALS & PRODUCTS", "LIVESTOCK", LIVESTOCK_CORE),
-#     ("ANIMALS & PRODUCTS", "POULTRY", POULTRY_CORE),
-#     ("ECONOMICS", "INCOME", INCOME_CORE),
-#     ("ECONOMICS", "EXPENSES", EXPENSES_CORE),
-#     ("ECONOMICS", "PRICES PAID", PRICES_PAID_CORE),
-# ]
-
 CORE_VARIABLES = {
     "FIELD CROPS": {
         "sector": "CROPS",
