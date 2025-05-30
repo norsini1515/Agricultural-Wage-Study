@@ -1,4 +1,4 @@
-from agwage import load_api_key
+from .env import load_api_key
 
 NASS_API_KEY = load_api_key("NASS_API_KEY")
 

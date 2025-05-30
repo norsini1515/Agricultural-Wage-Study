@@ -16,6 +16,35 @@ FIELD_CROPS_CORE_STATS = [
     "CONDITION"
 ]
 
+FIELD_CROPS_METRICS = {
+        "land_use": [
+            ("AREA PLANTED", "ACRES"),
+            ("AREA HARVESTED", "ACRES"),
+        ],
+        "output": [
+            ("YIELD", "BU / ACRE"),
+            ("PRODUCTION", "BU"),
+            ("SALES", "$"),
+            ("SALES", "BU")
+        ],
+        "price": [
+            ("PRICE RECEIVED", "$ / BU"),
+        ],
+        "condition": [
+            ("CONDITION", "PCT EXCELLENT"),
+            ("CONDITION", "PCT GOOD"),
+            ("CONDITION", "PCT FAIR"),
+            ("CONDITION", "PCT POOR"),
+            ("CONDITION", "PCT VERY POOR"),
+        ],
+        "climate_sensitivity": [
+            ("MOISTURE", "PCT"),
+            ("WATER APPLIED", "ACRE FEET / ACRE"),
+        ],
+    }
+
+####################################
+
 LIVESTOCK_BASE = {
     "source_desc": "SURVEY",
     "sector_desc": "ANIMALS & PRODUCTS",
@@ -106,17 +135,6 @@ PRICES_PAID_CORE = [
     "CHEMICAL TOTALS",              # Herbicides/fungicides/pesticides
     "MACHINERY TOTALS"              # Broad capital costs
 ]
-
-
-# CORE_VARIABLES = [
-#     #sector, group, commodity
-#     ("CROPS", "FIELD CROPS", FIELD_CROPS_CORE),
-#     ("ANIMALS & PRODUCTS", "LIVESTOCK", LIVESTOCK_CORE),
-#     ("ANIMALS & PRODUCTS", "POULTRY", POULTRY_CORE),
-#     ("ECONOMICS", "INCOME", INCOME_CORE),
-#     ("ECONOMICS", "EXPENSES", EXPENSES_CORE),
-#     ("ECONOMICS", "PRICES PAID", PRICES_PAID_CORE),
-# ]
 
 CORE_VARIABLES = {
     "FIELD CROPS": {

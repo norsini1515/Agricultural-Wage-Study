@@ -2,7 +2,8 @@ from pathlib import Path
 
 
 # Root of the project (one level up from /src)
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+# PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = Path("P:/Gitlab/orsin005/miscellaneous/Agricultural-Wage-Study")
 
 # Data directories
 DATA_DIR = PROJECT_ROOT / "data"
@@ -21,4 +22,4 @@ FIGURES_DIR = OUTPUT_DIR / "figures"
 
 
 if __name__ == '__main__':
-    print(RAW_DIR)
+    print(DATA_DIR)
